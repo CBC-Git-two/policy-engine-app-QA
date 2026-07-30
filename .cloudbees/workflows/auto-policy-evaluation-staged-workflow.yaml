@@ -9,6 +9,9 @@ metadata:
       jobs:
         - checkout-and-secret-scan
         - policy-check-secret-scan
+    - name: QA
+      jobs:
+        - policy-check-match-any
 jobs:
   checkout-and-secret-scan:
     outputs:
@@ -27,11 +30,20 @@ jobs:
         uses: docker://alpine:3.20
         name: Print Policy Subject
   policy-check-secret-scan:
-    needs:
-      - checkout-and-secret-scan
+    needs: checkout-and-secret-scan
     uses: cloudbees-io/policy-utils/.cloudbees/workflows/by-context.yaml@lt-test
     with:
       checkpoint-type: stage
       input-data: ${{ needs.checkout-and-secret-scan.outputs.policy-subject }}
       checkpoint-position: within
       checkpoint-name: Development
+  policy-check-match-any:
+    needs:
+      - policy-check-secret-scan
+      - checkout-and-secret-scan
+    uses: cloudbees-io/policy-utils/.cloudbees/workflows/by-context.yaml@lt-test
+    with:
+      checkpoint-type: stage
+      input-data: ${{ needs.checkout-and-sast-scan.outputs.policy-subject }}
+      checkpoint-position: within
+      checkpoint-name: QA
